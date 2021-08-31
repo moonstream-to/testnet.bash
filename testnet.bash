@@ -13,6 +13,8 @@ set -e -o pipefail
 
 PASSWORD_FOR_ALL_ACCOUNTS="peppercat"
 
+GETH="${GETH:-geth}"
+
 TESTNET_BASE_DIR="$TESTNET_BASE_DIR"
 if [ -z "$TESTNET_BASE_DIR" ]
 then
@@ -27,20 +29,12 @@ then
 fi
 
 PIDS_FILE="$TESTNET_BASE_DIR/pids.txt"
-if [ ! -f "$PIDS_FILE" ]
-then
-    touch "$PIDS_FILE"
-fi
-
 BOOTNODES_FILE="$TESTNET_BASE_DIR/bootnodes.txt"
-if [ ! -f "$BOOTNODES_FILE" ]
-then
-    touch "$BOOTNODES_FILE"
-fi
-
 # Reset PID and bootnode metadata
 rm -f "$BOOTNODES_FILE" "$PIDS_FILE"
+touch "$PIDS_FILE" "$BOOTNODES_FILE"
 
+# Modify this if you would like to change the genesis parameters.
 GENESIS_JSON="$TESTNET_BASE_DIR/genesis.json"
 cat <<EOF >"$GENESIS_JSON"
 {
@@ -92,20 +86,20 @@ function run_miner() {
     OLDEST_ACCOUNT_FILE=$(ls -1tr "$KEYSTORE_DIR")
     if [ -z "$OLDEST_ACCOUNT_FILE" ]
     then
-        geth account new --datadir "$MINER_DATADIR" --password "$PASSWORD_FILE" >>"$MINER_LOGFILE"
+        "$GETH" account new --datadir "$MINER_DATADIR" --password "$PASSWORD_FILE" >>"$MINER_LOGFILE"
         OLDEST_ACCOUNT_FILE=$(ls -1tr "$MINER_DATADIR/keystore/")
     fi
 
     MINER_ADDRESS=$(jq -r ".address" "$KEYSTORE_DIR/$OLDEST_ACCOUNT_FILE")
 
-    geth init --datadir "$MINER_DATADIR" "$GENESIS_JSON"
+    "$GETH" init --datadir "$MINER_DATADIR" "$GENESIS_JSON"
 
     BOOTNODE="$(head -n1 $BOOTNODES_FILE)"
 
     if [ -z "$BOOTNODE" ]
     then
         set -x
-        geth \
+        "$GETH" \
             --datadir="$MINER_DATADIR" \
             --ethash.dagdir="$MINER_DAGDIR" \
             --mine \
@@ -119,7 +113,7 @@ function run_miner() {
         set +x
     else
         set -x
-        geth \
+        "$GETH" \
             --datadir="$MINER_DATADIR" \
             --ethash.dagdir="$MINER_DAGDIR" \
             --mine \
@@ -139,7 +133,7 @@ function run_miner() {
 
     if [ -z "$BOOTNODE" ]
     then
-        until geth attach --exec "console.log(admin.nodeInfo.enode)" "$MINER_DATADIR/geth.ipc" | head -n1 >"$BOOTNODES_FILE"
+        until "$GETH" attach --exec "console.log(admin.nodeInfo.enode)" "$MINER_DATADIR/geth.ipc" | head -n1 >"$BOOTNODES_FILE"
         do
             sleep 1
         done
@@ -168,6 +162,7 @@ function cancel() {
 
 trap cancel SIGINT
 
+# Add additional nodes here.
 MINER_0=$(run_miner 0)
 MINER_1=$(run_miner 1)
 

@@ -4,9 +4,10 @@ Bash script that sets up a private Ethereum network for development and testing.
 ## Setup
 
 This bash script uses:
-0. [`bash`](https://www.gnu.org/software/bash/)
-1. [`geth`](https://github.com/ethereum/go-ethereum)
-2. [`jq`](https://github.com/stedolan/jq)
+
+1. [`bash`](https://www.gnu.org/software/bash/)
+2. [`geth`](https://github.com/ethereum/go-ethereum)
+3. [`jq`](https://github.com/stedolan/jq)
 
 
 ## Creating a test network
@@ -25,8 +26,18 @@ All the account passwords (by default) are `peppercat`.
 ## Inputs
 
 Accepts inputs through environment variables:
-- `TESTNET_BASE_DIR`: Directory in which all data is stored. This is where you will find your node
-data directories, dag directories, and more.
+
+### `TESTNET_BASE_DIR`
+
+Directory in which all data is stored. This is where you will find your node data directories,
+dag directories, and more.
+
+If this is not set, will create a temporary directory in which to store all data.
+
+### `GETH`
+
+Set this environment variable to specify a path to a custom `geth`. If not set, will use the first
+`geth` available in your `$PATH`.
 
 ## Customization
 
