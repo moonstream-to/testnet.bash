@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Source: https://github.com/bugout-dev/testnet.bash
+
 # This script sets up an Ethereum test network using 2 miners.
 # Assumptions:
 # - geth available on PATH

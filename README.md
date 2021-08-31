@@ -23,6 +23,11 @@ You can run the same command to restart the testnet after shutting it down using
 
 All the account passwords (by default) are `peppercat`.
 
+## Using in your own codebase
+
+Suggest you just copy the `testnet.bash` script over to your repo, modify it to suit your needs, and
+use it there. Would appreciate attribution (by linking to this repo).
+
 ## Inputs
 
 Accepts inputs through environment variables:
