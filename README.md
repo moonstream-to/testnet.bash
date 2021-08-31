@@ -52,13 +52,19 @@ Just copy the bash script and edit it, my friend.
 
 ### Why not [Ganache](https://www.trufflesuite.com/ganache)?
 
-Ganache is pretty heavy-duty and I wanted something light-weight that I could use to spin up a private
-network, set up a scenario, and then run a series of tests.
+`testnet.bash` is the testing environment we use to test
+[Moonstream](https://github.com/bugout-dev/moonstream) crawlers and data providers.
 
-Ganache is also a completely independent implementation of the Ethereum interfaces. I wanted to be
-able to test against (different versions of) `geth` because that's what we currently use in
-[`moonstream`](https://github.com/bugout-dev/moonstream). Moonstream crawlers crawl data from `geth`
-nodes and any reasonable test of those crawlers should use `geth` nodes.
+Ganache is built for smart contract developers. In addition to smart contracts, we also need to test
+blockchain (and transaction pool) crawlers and data providers. Our crawlers and data providers use
+`geth`-specific APIs that Ganache either does not implement or for which the Ganache semantics differ
+from the `geth` semantics.
+
+Since our testnet needs to include `geth` nodes, Ganache is not suitable to our needs.
+
+Moreover, Ganache feels pretty heavy-duty to me and we wanted something light-weight that we could
+use to spin up a private network, set up a scenario, and then run a series of tests. On our local
+machines or in continuous integration environments (we use GitHub Actions).
 
 ### Why bash?
 
