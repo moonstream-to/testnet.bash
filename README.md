@@ -57,7 +57,7 @@ network, set up a scenario, and then run a series of tests.
 
 Ganache is also a completely independent implementation of the Ethereum interfaces. I wanted to be
 able to test against (different versions of) `geth` because that's what we currently use in
-[Moonstream](https://github.com/bugout-dev/moonstream). Moonstream crawlers crawl data from `geth`
+[`moonstream`](https://github.com/bugout-dev/moonstream). Moonstream crawlers crawl data from `geth`
 nodes and any reasonable test of those crawlers should use `geth` nodes.
 
 ### Why bash?
@@ -100,6 +100,8 @@ tail -f $(echo "$MINER_0" | jq -r ".logfile") $(echo "$MINER_1" | jq -r ".logfil
 ```
 
 ### Why `geth`?
+
+Because `geth` is what we use in [`moonstream`](https://github.com/bugout-dev/moonstream).
 
 If you would like to add support for another Ethereum client, I would welcome a pull request.
 
