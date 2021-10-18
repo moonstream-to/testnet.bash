@@ -18,7 +18,7 @@ setup(
         ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="testnet: Python client and testing library for testnet.bash",
+    description="testnet: Write Python tests for your Ethereum code using testnet.bash.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",
