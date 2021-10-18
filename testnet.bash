@@ -18,8 +18,13 @@ function usage() {
     echo
     echo "Starts an Ethereum testnet consisting of two mining nodes and a preconfigured genesis block."
     echo "Any changes to network topology or configuration should be made by editing this file."
-    echo "You may use the TESTNET_BASE_DIR environment variable to specify a directory in which to persist blockchain state. If this variable is not specified, a temporary directory will be used."
-    echo "The password for every account is 'peppercat' (without the quotes)."
+    echo "Respects the following environment variables:"
+    echo "TESTNET_BASE_DIR"
+    echo -e "\tUse this environment variable to specify a directory in which to persist blockchain state. If this variable is not specified, a temporary directory will be used."
+    echo "PASSWORD_FOR_ALL_ACCOUNTS"
+    echo -e "\tUse this environment variable to specify a password that unlocks all miner accounts in the testnet. Default: 'peppercat' (without the quotes)."
+    echo "GENESIS_JSON_CHAIN_ID"
+    echo -e "\tUse this environment variable to specify a chain ID to write into the genesis.json for your testnet. Default: 1337."
 }
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
@@ -28,7 +33,7 @@ then
     exit 2
 fi
 
-PASSWORD_FOR_ALL_ACCOUNTS="peppercat"
+PASSWORD_FOR_ALL_ACCOUNTS="${PASSWORD_FOR_ALL_ACCOUNTS:-peppercat}"
 
 GETH="${GETH:-geth}"
 
@@ -52,12 +57,14 @@ BOOTNODES_FILE="$TESTNET_BASE_DIR/bootnodes.txt"
 rm -f "$BOOTNODES_FILE" "$PIDS_FILE"
 touch "$PIDS_FILE" "$BOOTNODES_FILE"
 
+GENESIS_JSON_CHAIN_ID="${GENESIS_JSON_CHAIN_ID:-1337}"
+
 # Modify this if you would like to change the genesis parameters.
 GENESIS_JSON="$TESTNET_BASE_DIR/genesis.json"
 cat <<EOF >"$GENESIS_JSON"
 {
   "config": {
-    "chainId": 1337,
+    "chainId": $GENESIS_JSON_CHAIN_ID,
     "homesteadBlock": 0,
     "eip150Block": 0,
     "eip155Block": 0,
