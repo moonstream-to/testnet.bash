@@ -13,6 +13,21 @@
 
 set -e -o pipefail
 
+function usage() {
+    echo "$0 [-h]"
+    echo
+    echo "Starts an Ethereum testnet consisting of two mining nodes and a preconfigured genesis block."
+    echo "Any changes to network topology or configuration should be made by editing this file."
+    echo "You may use the TESTNET_BASE_DIR environment variable to specify a directory in which to persist blockchain state. If this variable is not specified, a temporary directory will be used."
+    echo "The password for every account is 'peppercat' (without the quotes)."
+}
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]
+then
+    usage
+    exit 2
+fi
+
 PASSWORD_FOR_ALL_ACCOUNTS="peppercat"
 
 GETH="${GETH:-geth}"
@@ -29,6 +44,7 @@ then
     echo "Base directory does not exist or is not a directory: $TESTNET_BASE_DIR"
     exit 1
 fi
+
 
 PIDS_FILE="$TESTNET_BASE_DIR/pids.txt"
 BOOTNODES_FILE="$TESTNET_BASE_DIR/bootnodes.txt"
