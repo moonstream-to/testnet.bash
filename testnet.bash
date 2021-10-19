@@ -50,7 +50,6 @@ then
     exit 1
 fi
 
-
 PIDS_FILE="$TESTNET_BASE_DIR/pids.txt"
 BOOTNODES_FILE="$TESTNET_BASE_DIR/bootnodes.txt"
 # Reset PID and bootnode metadata
@@ -58,6 +57,12 @@ rm -f "$BOOTNODES_FILE" "$PIDS_FILE"
 touch "$PIDS_FILE" "$BOOTNODES_FILE"
 
 GENESIS_JSON_CHAIN_ID="${GENESIS_JSON_CHAIN_ID:-1337}"
+
+MINERS_FILE="$TESTNET_BASE_DIR/miners.txt"
+if [ -f "$MINERS_FILE" ]
+then
+    rm "$MINERS_FILE"
+fi
 
 # Modify this if you would like to change the genesis parameters.
 GENESIS_JSON="$TESTNET_BASE_DIR/genesis.json"
@@ -164,7 +169,7 @@ function run_miner() {
         done
     fi
 
-    echo "{\"miner\": \"$MINER_LABEL\", \"address\": \"$MINER_ADDRESS\", \"pid\": $PID, \"logfile\": \"$MINER_LOGFILE\"}"
+    echo "{\"miner\": \"$MINER_LABEL\", \"address\": \"$MINER_ADDRESS\", \"pid\": $PID, \"datadir\": \"$MINER_DATADIR\", \"logfile\": \"$MINER_LOGFILE\"}"
 }
 
 function cancel() {
@@ -185,15 +190,15 @@ function cancel() {
     done <"$PIDS_FILE"
 }
 
-trap cancel SIGINT
+trap cancel SIGINT SIGTERM SIGKILL
 
 # Add additional nodes here.
 MINER_0=$(run_miner 0)
 MINER_1=$(run_miner 1)
 
 echo "Running testnet. Miner info:"
-echo "$MINER_0" | jq .
-echo "$MINER_1" | jq .
+echo "$MINER_0" | tee -a $MINERS_FILE | jq .
+echo "$MINER_1" | tee -a $MINERS_FILE | jq .
 echo
 echo "Press CTRL+C to exit."
 
