@@ -13,7 +13,27 @@
 
 set -e -o pipefail
 
-PASSWORD_FOR_ALL_ACCOUNTS="peppercat"
+function usage() {
+    echo "$0 [-h]"
+    echo
+    echo "Starts an Ethereum testnet consisting of two mining nodes and a preconfigured genesis block."
+    echo "Any changes to network topology or configuration should be made by editing this file."
+    echo "Respects the following environment variables:"
+    echo "TESTNET_BASE_DIR"
+    echo -e "\tUse this environment variable to specify a directory in which to persist blockchain state. If this variable is not specified, a temporary directory will be used."
+    echo "PASSWORD_FOR_ALL_ACCOUNTS"
+    echo -e "\tUse this environment variable to specify a password that unlocks all miner accounts in the testnet. Default: 'peppercat' (without the quotes)."
+    echo "GENESIS_JSON_CHAIN_ID"
+    echo -e "\tUse this environment variable to specify a chain ID to write into the genesis.json for your testnet. Default: 1337."
+}
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]
+then
+    usage
+    exit 2
+fi
+
+PASSWORD_FOR_ALL_ACCOUNTS="${PASSWORD_FOR_ALL_ACCOUNTS:-peppercat}"
 
 GETH="${GETH:-geth}"
 
@@ -36,12 +56,20 @@ BOOTNODES_FILE="$TESTNET_BASE_DIR/bootnodes.txt"
 rm -f "$BOOTNODES_FILE" "$PIDS_FILE"
 touch "$PIDS_FILE" "$BOOTNODES_FILE"
 
+GENESIS_JSON_CHAIN_ID="${GENESIS_JSON_CHAIN_ID:-1337}"
+
+MINERS_FILE="$TESTNET_BASE_DIR/miners.txt"
+if [ -f "$MINERS_FILE" ]
+then
+    rm "$MINERS_FILE"
+fi
+
 # Modify this if you would like to change the genesis parameters.
 GENESIS_JSON="$TESTNET_BASE_DIR/genesis.json"
 cat <<EOF >"$GENESIS_JSON"
 {
   "config": {
-    "chainId": 1337,
+    "chainId": $GENESIS_JSON_CHAIN_ID,
     "homesteadBlock": 0,
     "eip150Block": 0,
     "eip155Block": 0,
@@ -65,12 +93,19 @@ cat <<EOF >"$GENESIS_JSON"
 EOF
 
 function run_miner() {
+    MINER_INDEX=$1
+    JSONRPC_PORT=$2
+    if [ -z "$JSONRPC_PORT" ]
+    then
+        JSONRPC_PORT=0
+    fi
+
     PASSWORD_FILE="$TESTNET_BASE_DIR/password.txt"
     if [ ! -f "$PASSWORD_FILE" ]
     then
         echo "$PASSWORD_FOR_ALL_ACCOUNTS" >"$PASSWORD_FILE"
     fi
-    MINER_LABEL="miner-$1"
+    MINER_LABEL="miner-$MINER_INDEX"
     MINER_LOGFILE="$TESTNET_BASE_DIR/$MINER_LABEL.log"
     MINER_DATADIR="$TESTNET_BASE_DIR/$MINER_LABEL"
     echo "Creating data directory for miner: $MINER_LABEL -- $MINER_DATADIR" 1>&2
@@ -110,6 +145,9 @@ function run_miner() {
             --miner.etherbase="$MINER_ADDRESS" \
             --networkid=1337 \
             --port 0 \
+            --http.api eth \
+            --http.addr 0.0.0.0 \
+            --http.port "$JSONRPC_PORT" \
             >>"$MINER_LOGFILE" 2>&1 \
             &
         set +x
@@ -123,8 +161,11 @@ function run_miner() {
             --miner.gasprice=1000 \
             --miner.etherbase="$MINER_ADDRESS" \
             --networkid=1337 \
-            --port 0 \
+            --port "$JSONRPC_PORT" \
             --bootnodes "$BOOTNODE" \
+            --http.api eth \
+            --http.addr 0.0.0.0 \
+            --http.port "$JSONRPC_PORT" \
             >>"$MINER_LOGFILE" 2>&1 \
             &
         set +x
@@ -141,7 +182,7 @@ function run_miner() {
         done
     fi
 
-    echo "{\"miner\": \"$MINER_LABEL\", \"address\": \"$MINER_ADDRESS\", \"pid\": $PID, \"logfile\": \"$MINER_LOGFILE\"}"
+    echo "{\"miner\": \"$MINER_LABEL\", \"address\": \"$MINER_ADDRESS\", \"pid\": $PID, \"datadir\": \"$MINER_DATADIR\", \"logfile\": \"$MINER_LOGFILE\"}"
 }
 
 function cancel() {
@@ -162,15 +203,15 @@ function cancel() {
     done <"$PIDS_FILE"
 }
 
-trap cancel SIGINT
+trap cancel SIGINT SIGTERM SIGKILL
 
 # Add additional nodes here.
 MINER_0=$(run_miner 0)
 MINER_1=$(run_miner 1)
 
 echo "Running testnet. Miner info:"
-echo "$MINER_0" | jq .
-echo "$MINER_1" | jq .
+echo "$MINER_0" | tee -a $MINERS_FILE | jq .
+echo "$MINER_1" | tee -a $MINERS_FILE | jq .
 echo
 echo "Press CTRL+C to exit."
 
