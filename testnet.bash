@@ -94,12 +94,6 @@ EOF
 
 function run_miner() {
     MINER_INDEX=$1
-    JSONRPC_PORT=$2
-    if [ -z "$JSONRPC_PORT" ]
-    then
-        JSONRPC_PORT=0
-    fi
-
     PASSWORD_FILE="$TESTNET_BASE_DIR/password.txt"
     if [ ! -f "$PASSWORD_FILE" ]
     then
@@ -145,9 +139,6 @@ function run_miner() {
             --miner.etherbase="$MINER_ADDRESS" \
             --networkid=1337 \
             --port 0 \
-            --http.api eth \
-            --http.addr 0.0.0.0 \
-            --http.port "$JSONRPC_PORT" \
             >>"$MINER_LOGFILE" 2>&1 \
             &
         set +x
@@ -161,11 +152,8 @@ function run_miner() {
             --miner.gasprice=1000 \
             --miner.etherbase="$MINER_ADDRESS" \
             --networkid=1337 \
-            --port "$JSONRPC_PORT" \
+            --port 0 \
             --bootnodes "$BOOTNODE" \
-            --http.api eth \
-            --http.addr 0.0.0.0 \
-            --http.port "$JSONRPC_PORT" \
             >>"$MINER_LOGFILE" 2>&1 \
             &
         set +x
