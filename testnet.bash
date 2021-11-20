@@ -100,6 +100,9 @@ function run_miner() {
         echo "$PASSWORD_FOR_ALL_ACCOUNTS" >"$PASSWORD_FILE"
     fi
     MINER_LABEL="miner-$MINER_INDEX"
+    MINER_HTTP_ADDR="$2"
+    MINER_HTTP_PORT="$3"
+    MINER_LISTENING_PORT="$4"
     MINER_LOGFILE="$TESTNET_BASE_DIR/$MINER_LABEL.log"
     MINER_DATADIR="$TESTNET_BASE_DIR/$MINER_LABEL"
     echo "Creating data directory for miner: $MINER_LABEL -- $MINER_DATADIR" 1>&2
@@ -137,8 +140,12 @@ function run_miner() {
             --miner.threads=1 \
             --miner.gasprice=1000 \
             --miner.etherbase="$MINER_ADDRESS" \
+	    --port="$MINER_LISTENING_PORT" \
+	    --http \
+	    --http.addr "$MINER_HTTP_ADDR" \
+	    --http.port "$MINER_HTTP_PORT" \
+	    --http.api eth,web3,txpool \
             --networkid=1337 \
-            --port 0 \
             >>"$MINER_LOGFILE" 2>&1 \
             &
         set +x
@@ -151,8 +158,12 @@ function run_miner() {
             --miner.threads=1 \
             --miner.gasprice=1000 \
             --miner.etherbase="$MINER_ADDRESS" \
+	    --port="$MINER_LISTENING_PORT" \
+	    --http \
+            --http.addr "$MINER_HTTP_ADDR" \
+	    --http.port "$MINER_HTTP_PORT" \
+	    --http.api eth,web3,txpool \
             --networkid=1337 \
-            --port 0 \
             --bootnodes "$BOOTNODE" \
             >>"$MINER_LOGFILE" 2>&1 \
             &
@@ -194,8 +205,8 @@ function cancel() {
 trap cancel SIGINT SIGTERM SIGKILL
 
 # Add additional nodes here.
-MINER_0=$(run_miner 0)
-MINER_1=$(run_miner 1)
+MINER_0=$(run_miner 0 127.0.0.1 8545 30303)
+MINER_1=$(run_miner 1 127.0.0.1 8546 30304)
 
 echo "Running testnet. Miner info:"
 echo "$MINER_0" | tee -a $MINERS_FILE | jq .
