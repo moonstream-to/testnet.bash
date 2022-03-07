@@ -27,7 +27,7 @@ function usage() {
     echo -e "\tUse this environment variable to specify a chain ID to write into the genesis.json for your testnet. Default: 1337."
     echo
     echo "Optional arguments:"
-    echo "  -a  Address for web3 server (default: 127.0.0.1)"
+    echo "  -a  Address for http web3 server (default: 127.0.0.1)"
 }
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
@@ -36,10 +36,10 @@ then
     exit 2
 fi
 
-FLAG_ADDR="127.0.0.1"
+FLAG_HTTP_ADDR="127.0.0.1"
 while getopts 'a:' flag; do
     case "${flag}" in
-        a) FLAG_ADDR="${OPTARG}" ;;
+        a) FLAG_HTTP_ADDR="${OPTARG}" ;;
         *) usage
         exit 2 ;;
     esac
@@ -153,7 +153,7 @@ function run_miner() {
             --miner.etherbase="$MINER_ADDRESS" \
             --port="$MINER_LISTENING_PORT" \
             --http \
-            --http.addr "$FLAG_ADDR" \
+            --http.addr "$FLAG_HTTP_ADDR" \
             --http.port "$MINER_HTTP_PORT" \
             --http.api eth,web3,txpool,miner,personal,debug \
             --allow-insecure-unlock \
@@ -172,7 +172,7 @@ function run_miner() {
             --miner.etherbase="$MINER_ADDRESS" \
             --port="$MINER_LISTENING_PORT" \
             --http \
-            --http.addr "$FLAG_ADDR" \
+            --http.addr "$FLAG_HTTP_ADDR" \
             --http.port "$MINER_HTTP_PORT" \
             --http.api eth,web3,txpool,miner,personal,debug \
             --allow-insecure-unlock \
