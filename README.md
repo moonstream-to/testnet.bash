@@ -44,6 +44,14 @@ If this is not set, will create a temporary directory in which to store all data
 Set this environment variable to specify a path to a custom `geth`. If not set, will use the first
 `geth` available in your `$PATH`.
 
+## Using with `brownie`
+
+To add testnet bash as new network:
+
+```bash
+brownie networks add Ethereum ethereum-local-testnet name="Moonstream Ethereum testnet" host="http://127.0.0.1:8545" chainid=1337
+```
+
 ## Customization
 
 Just copy the bash script and edit it, my friend.
