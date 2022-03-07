@@ -27,7 +27,8 @@ function usage() {
     echo -e "\tUse this environment variable to specify a chain ID to write into the genesis.json for your testnet. Default: 1337."
     echo
     echo "Optional arguments:"
-    echo "  -a  Address for http web3 server (default: 127.0.0.1)"
+    echo "  -a  Address for http web3 server. Default: 127.0.0.1."
+    echo "  -b  Blockchain config to run [ethereum/polygon]. Polygon blockchain is pseudo-polygon blockchain, running by geth with modified genesis file. Default: ethereum."
 }
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
@@ -37,9 +38,11 @@ then
 fi
 
 FLAG_HTTP_ADDR="127.0.0.1"
-while getopts 'a:' flag; do
+FLAG_BLOCKCHAIN="ethereum"
+while getopts 'ab:' flag; do
     case "${flag}" in
         a) FLAG_HTTP_ADDR="${OPTARG}" ;;
+        b) FLAG_BLOCKCHAIN="${OPTARG}" ;;
         *) usage
         exit 2 ;;
     esac
@@ -68,41 +71,28 @@ BOOTNODES_FILE="$TESTNET_BASE_DIR/bootnodes.txt"
 rm -f "$BOOTNODES_FILE" "$PIDS_FILE"
 touch "$PIDS_FILE" "$BOOTNODES_FILE"
 
-GENESIS_JSON_CHAIN_ID="${GENESIS_JSON_CHAIN_ID:-1337}"
-
 MINERS_FILE="$TESTNET_BASE_DIR/miners.txt"
 if [ -f "$MINERS_FILE" ]
 then
     rm "$MINERS_FILE"
 fi
 
+# Generate genesis file
 # Modify this if you would like to change the genesis parameters.
 GENESIS_JSON="$TESTNET_BASE_DIR/genesis.json"
-cat <<EOF >"$GENESIS_JSON"
-{
-  "config": {
-    "chainId": $GENESIS_JSON_CHAIN_ID,
-    "homesteadBlock": 0,
-    "eip150Block": 0,
-    "eip155Block": 0,
-    "eip158Block": 0,
-    "byzantiumBlock": 0,
-    "constantinopleBlock": 0,
-    "petersburgBlock": 0,
-    "istanbulBlock": 0,
-    "berlinBlock": 0
-  },
-  "alloc": {},
-  "coinbase": "0x0000000000000000000000000000000000000000",
-  "difficulty": "0x20000",
-  "extraData": "",
-  "gasLimit": "0x2fefd8",
-  "nonce": "0x0037861100000042",
-  "mixhash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "timestamp": "0x00"
-}
-EOF
+GENESIS_JSON_CHAIN_ID="${GENESIS_JSON_CHAIN_ID:-1337}"
+if [ "$FLAG_BLOCKCHAIN" == "ethereum" ]; then
+    MINER_GASPRICE=1000000000
+    MINER_GASLIMIT=8000000
+    bash genesis-ethereum.bash "$GENESIS_JSON" "$GENESIS_JSON_CHAIN_ID"
+elif [ "$FLAG_BLOCKCHAIN" == "polygon" ]; then
+    MINER_GASPRICE=30000000000
+    MINER_GASLIMIT=20000000
+    bash genesis-polygon.bash "$GENESIS_JSON" "$GENESIS_JSON_CHAIN_ID"
+else
+    echo "Unsupported blockchain: $FLAG_BLOCKCHAIN"
+    exit 1
+fi
 
 function run_miner() {
     MINER_INDEX=$1
@@ -149,7 +139,8 @@ function run_miner() {
             --ethash.dagdir="$MINER_DAGDIR" \
             --mine \
             --miner.threads=1 \
-            --miner.gasprice=1000 \
+            --miner.gasprice="$MINER_GASPRICE" \
+            --miner.gaslimit="$MINER_GASLIMIT" \
             --miner.etherbase="$MINER_ADDRESS" \
             --port="$MINER_LISTENING_PORT" \
             --http \
@@ -168,7 +159,8 @@ function run_miner() {
             --ethash.dagdir="$MINER_DAGDIR" \
             --mine \
             --miner.threads=1 \
-            --miner.gasprice=1000 \
+            --miner.gasprice="$MINER_GASPRICE" \
+            --miner.gaslimit="$MINER_GASLIMIT" \
             --miner.etherbase="$MINER_ADDRESS" \
             --port="$MINER_LISTENING_PORT" \
             --http \
