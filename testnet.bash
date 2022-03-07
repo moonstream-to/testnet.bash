@@ -25,6 +25,9 @@ function usage() {
     echo -e "\tUse this environment variable to specify a password that unlocks all miner accounts in the testnet. Default: 'peppercat' (without the quotes)."
     echo "GENESIS_JSON_CHAIN_ID"
     echo -e "\tUse this environment variable to specify a chain ID to write into the genesis.json for your testnet. Default: 1337."
+    echo
+    echo "Optional arguments:"
+    echo "  -a  Address for http web3 server (default: 127.0.0.1)"
 }
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
@@ -32,6 +35,15 @@ then
     usage
     exit 2
 fi
+
+FLAG_HTTP_ADDR="127.0.0.1"
+while getopts 'a:' flag; do
+    case "${flag}" in
+        a) FLAG_HTTP_ADDR="${OPTARG}" ;;
+        *) usage
+        exit 2 ;;
+    esac
+done
 
 PASSWORD_FOR_ALL_ACCOUNTS="${PASSWORD_FOR_ALL_ACCOUNTS:-peppercat}"
 
@@ -100,6 +112,8 @@ function run_miner() {
         echo "$PASSWORD_FOR_ALL_ACCOUNTS" >"$PASSWORD_FILE"
     fi
     MINER_LABEL="miner-$MINER_INDEX"
+    MINER_HTTP_PORT="$2"
+    MINER_LISTENING_PORT="$3"
     MINER_LOGFILE="$TESTNET_BASE_DIR/$MINER_LABEL.log"
     MINER_DATADIR="$TESTNET_BASE_DIR/$MINER_LABEL"
     echo "Creating data directory for miner: $MINER_LABEL -- $MINER_DATADIR" 1>&2
@@ -137,8 +151,13 @@ function run_miner() {
             --miner.threads=1 \
             --miner.gasprice=1000 \
             --miner.etherbase="$MINER_ADDRESS" \
+            --port="$MINER_LISTENING_PORT" \
+            --http \
+            --http.addr "$FLAG_HTTP_ADDR" \
+            --http.port "$MINER_HTTP_PORT" \
+            --http.api eth,web3,txpool,miner,personal,debug \
+            --allow-insecure-unlock \
             --networkid=1337 \
-            --port 0 \
             >>"$MINER_LOGFILE" 2>&1 \
             &
         set +x
@@ -151,8 +170,13 @@ function run_miner() {
             --miner.threads=1 \
             --miner.gasprice=1000 \
             --miner.etherbase="$MINER_ADDRESS" \
+            --port="$MINER_LISTENING_PORT" \
+            --http \
+            --http.addr "$FLAG_HTTP_ADDR" \
+            --http.port "$MINER_HTTP_PORT" \
+            --http.api eth,web3,txpool,miner,personal,debug \
+            --allow-insecure-unlock \
             --networkid=1337 \
-            --port 0 \
             --bootnodes "$BOOTNODE" \
             >>"$MINER_LOGFILE" 2>&1 \
             &
@@ -194,8 +218,8 @@ function cancel() {
 trap cancel SIGINT SIGTERM SIGKILL
 
 # Add additional nodes here.
-MINER_0=$(run_miner 0)
-MINER_1=$(run_miner 1)
+MINER_0=$(run_miner 0 8545 30303)
+MINER_1=$(run_miner 1 8546 30304)
 
 echo "Running testnet. Miner info:"
 echo "$MINER_0" | tee -a $MINERS_FILE | jq .
